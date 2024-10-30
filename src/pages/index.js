@@ -76,6 +76,17 @@ export default function Home() {
                   フラッシュカードページ
                 </span>
               </Link>
+              <Link href="/sheet">
+                <span style={{
+                  margin: '10px',
+                  padding: '10px',
+                  backgroundColor: 'orange',
+                  color: 'white',
+                  textDecoration: 'none',
+                  borderRadius: '5px'
+                }}>単語シートページへ
+                </span>
+              </Link>
             </div>
             <button 
               onClick={handleLogout} 
