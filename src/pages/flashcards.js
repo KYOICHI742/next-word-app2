@@ -8,6 +8,7 @@ export default function Flashcards() {
   const [wordList, setWordList] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showBack, setShowBack] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -23,21 +24,43 @@ export default function Flashcards() {
     checkUser();
   }, [router]);
 
+  // 単語リストを取得
   const fetchWords = async (userId) => {
-    const { data } = await supabase.from('words').select('*').eq('user_id', userId);
-    setWordList(data || []);
+    try {
+      const { data, error } = await supabase.from('words').select('*').eq('user_id', userId);
+      if (error) {
+        console.error('単語リストの取得に失敗しました:', error.message);
+        throw new Error('単語リストの取得に失敗しました');
+      }
+      
+      console.log("取得した単語データ:", data); // デバッグ用
+      setWordList(data || []);
+      setCurrentIndex(0); // 最初の単語から表示
+    } catch (err) {
+      setErrorMessage(err.message);
+    }
   };
 
+  // カードの表と裏を切り替え
   const toggleCard = () => setShowBack(!showBack);
+
+  // 次の単語へ
   const nextWord = () => {
-    setShowBack(false);
-    setCurrentIndex((currentIndex + 1) % wordList.length);
-  };
-  const prevWord = () => {
-    setShowBack(false);
-    setCurrentIndex((currentIndex - 1 + wordList.length) % wordList.length);
+    if (wordList.length > 0) {
+      setShowBack(false);
+      setCurrentIndex((currentIndex + 1) % wordList.length);
+    }
   };
 
+  // 前の単語へ
+  const prevWord = () => {
+    if (wordList.length > 0) {
+      setShowBack(false);
+      setCurrentIndex((currentIndex - 1 + wordList.length) % wordList.length);
+    }
+  };
+
+  // ログアウト処理
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/'); // ログアウト後、ホームページにリダイレクト
@@ -46,6 +69,7 @@ export default function Flashcards() {
   return (
     <div style={{ textAlign: 'center', padding: '20px' }}>
       <h1>フラッシュカード</h1>
+
       {/* ナビゲーションボタン */}
       <div style={{ marginBottom: '20px' }}>
         <Link href="/manage">
@@ -74,6 +98,9 @@ export default function Flashcards() {
         </button>
       </div>
 
+      {/* エラーメッセージ表示 */}
+      {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+
       {/* フラッシュカードの表示 */}
       {wordList.length > 0 ? (
         <div>
@@ -91,9 +118,15 @@ export default function Flashcards() {
               border: '1px solid #ddd',
               borderRadius: '10px',
               cursor: 'pointer',
+              fontSize: '24px',
+              textAlign: 'center',
             }}
           >
-            {showBack ? wordList[currentIndex].meaning : wordList[currentIndex].word}
+            {/* カードに単語または意味を表示 */}
+            {(() => {
+              const word = wordList[currentIndex];
+              return showBack ? word.meaning : word.word;
+            })()}
           </div>
           <button onClick={nextWord}>→</button>
         </div>
